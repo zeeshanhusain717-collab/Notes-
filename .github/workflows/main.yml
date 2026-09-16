@@ -12,38 +12,48 @@ permissions:
 
 jobs:
   build:
-    name: Build Zeeshan Notice APK
+    name: Step-by-Step Android Build Pipeline
     runs-on: ubuntu-latest
 
     steps:
-      - name: 01 - Checkout Repository
+      # ==========================================
+      # STEP 1: GitHub Repository & Environment Setup
+      # ==========================================
+      - name: "Robot Step 01: Checkout Code Repository"
         uses: actions/checkout@v4
 
-      - name: 02 - Setup Java JDK 17
+      - name: "Robot Step 02: Setup Java OpenJDK 17"
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: 03 - Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: 04 - Install Android SDK Platforms
+      - name: "Robot Step 03: Initialize Android SDK Components"
         run: |
           set -euo pipefail
-          yes | sdkmanager --licenses >/dev/null || true
-          sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses >/dev/null || true
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 
-      - name: 05 - Create Project Directories
+      # ==========================================
+      # STEP 2: Modular Directory Creation
+      # ==========================================
+      - name: "Robot Step 04: Create Root & Source Directories"
         run: |
           set -euo pipefail
           mkdir -p app/src/main/java/com/zeeshan/notice
+
+      - name: "Robot Step 05: Create Resource & Asset Directories"
+        run: |
+          set -euo pipefail
           mkdir -p app/src/main/res/values
           mkdir -p app/src/main/res/drawable
           mkdir -p app/src/main/res/mipmap-anydpi-v26
           mkdir -p app/src/main/res/layout
 
-      - name: 06 - Write gradle.properties
+      # ==========================================
+      # STEP 3: System Gradle Configuration
+      # ==========================================
+      - name: "Robot Step 06: Configure Gradle Performance Properties"
         run: |
           cat > gradle.properties <<'EOF'
           org.gradle.jvmargs=-Xmx4096m -Dfile.encoding=UTF-8
@@ -52,7 +62,7 @@ jobs:
           org.gradle.daemon=false
           EOF
 
-      - name: 07 - Write settings.gradle
+      - name: "Robot Step 07: Configure Settings Gradle Project Tree"
         run: |
           cat > settings.gradle <<'EOF'
           pluginManagement {
@@ -66,7 +76,7 @@ jobs:
           include(":app")
           EOF
 
-      - name: 08 - Write Root build.gradle
+      - name: "Robot Step 08: Configure Root Build Script"
         run: |
           cat > build.gradle <<'EOF'
           plugins {
@@ -75,12 +85,12 @@ jobs:
           }
           EOF
 
-      - name: 09 - Setup Gradle Wrapper
+      - name: "Robot Step 09: Download & Link Gradle Wrapper"
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.5"
 
-      - name: 10 - Write app/build.gradle
+      - name: "Robot Step 10: Configure Module App build.gradle"
         run: |
           cat > app/build.gradle <<'EOF'
           plugins {
@@ -121,7 +131,10 @@ jobs:
           }
           EOF
 
-      - name: 11 - Write Colors & Strings (VIP Chocolate & White Theme)
+      # ==========================================
+      # STEP 4: UI Design, Theme & Resources
+      # ==========================================
+      - name: "Robot Step 11: Create App Strings Configuration"
         run: |
           cat > app/src/main/res/values/strings.xml <<'EOF'
           <?xml version="1.0" encoding="utf-8"?>
@@ -131,6 +144,8 @@ jobs:
           </resources>
           EOF
 
+      - name: "Robot Step 12: Create VIP Chocolate Theme Color Palette"
+        run: |
           cat > app/src/main/res/values/colors.xml <<'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
@@ -144,9 +159,11 @@ jobs:
           </resources>
           EOF
 
-      - name: 12 - Generate Premium 3D Z Vector Logo & App Icons
+      # ==========================================
+      # STEP 5: Icons & Branding Generation
+      # ==========================================
+      - name: "Robot Step 13: Generate 3D Icon Background Asset"
         run: |
-          # 3D White/Chocolate Z App Icon Background
           cat > app/src/main/res/drawable/ic_launcher_bg.xml <<'EOF'
           <vector xmlns:android="http://schemas.android.com/apk/res/android"
               xmlns:aapt="http://schemas.android.com/aapt"
@@ -170,24 +187,25 @@ jobs:
           </vector>
           EOF
 
-          # 3D Bold White Z Foreground Icon
+      - name: "Robot Step 14: Generate 3D White Z Foreground Vector"
+        run: |
           cat > app/src/main/res/drawable/ic_launcher_fg.xml <<'EOF'
           <vector xmlns:android="http://schemas.android.com/apk/res/android"
               android:width="108dp"
               android:height="108dp"
               android:viewportWidth="108"
               android:viewportHeight="108">
-              <!-- 3D Shadow Layer -->
               <path
                   android:fillColor="#1C100A"
                   android:pathData="M28,28 L80,28 L80,42 L48,68 L80,68 L80,82 L28,82 L28,68 L60,42 L28,42 Z" />
-              <!-- White Bold Z Surface Layer -->
               <path
                   android:fillColor="#FFFFFF"
                   android:pathData="M25,25 L77,25 L77,39 L45,65 L77,65 L77,79 L25,79 L25,65 L57,39 L25,39 Z" />
           </vector>
           EOF
 
+      - name: "Robot Step 15: Create Adaptive Icon Configuration"
+        run: |
           cat > app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml <<'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
@@ -196,7 +214,10 @@ jobs:
           </adaptive-icon>
           EOF
 
-      - name: 13 - Write AndroidManifest.xml
+      # ==========================================
+      # STEP 6: Core App Manifest & Logic
+      # ==========================================
+      - name: "Robot Step 16: Write AndroidManifest.xml Architecture"
         run: |
           cat > app/src/main/AndroidManifest.xml <<'EOF'
           <?xml version="1.0" encoding="utf-8"?>
@@ -224,7 +245,7 @@ jobs:
           </manifest>
           EOF
 
-      - name: 14 - Write MainActivity.kt (Dashboard & Full Editor System)
+      - name: "Robot Step 17: Write MainActivity.kt Logic Code"
         run: |
           cat > app/src/main/java/com/zeeshan/notice/MainActivity.kt <<'EOF'
           package com.zeeshan.notice
@@ -257,7 +278,6 @@ jobs:
                       layoutParams = FrameLayout.LayoutParams(-1, -1)
                   }
 
-                  // 1. DASHBOARD HEADER (Zeeshan Notice) - Chocolate Background + White Text
                   dashboardHeader = LinearLayout(this).apply {
                       orientation = LinearLayout.HORIZONTAL
                       gravity = Gravity.CENTER_VERTICAL
@@ -294,7 +314,6 @@ jobs:
                   dashboardHeader.addView(titleTv)
                   dashboardHeader.addView(memoryTv)
 
-                  // 2. PROJECT HEADER (Dynamic Color Bar for Editor)
                   projectHeader = LinearLayout(this).apply {
                       orientation = LinearLayout.HORIZONTAL
                       gravity = Gravity.CENTER_VERTICAL
@@ -336,7 +355,6 @@ jobs:
                   projectHeader.addView(projectTitleTv)
                   projectHeader.addView(saveBtn)
 
-                  // 3. MAIN DASHBOARD CONTENT
                   noticeListLayout = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
                       setPadding(30, 30, 30, 30)
@@ -346,15 +364,13 @@ jobs:
                   addNoticeCard("🔒 Project Alpha", "आज की मीटिंग के मुख्य बिंदु और प्रोजेक्ट का काम...", "#3D2314")
                   addNoticeCard("Personal Diary", "घरेलू सामान की लिस्ट और बही-खाता एंट्री...", "#5A3822")
 
-                  // 4. FULL-SCREEN EDITOR CANVAS
                   editorLayout = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
                       setBackgroundColor(Color.WHITE)
                       visibility = View.GONE
-                      layoutParams = LinearLayout.LayoutParams(-1, 0, 1f)
+                      layoutParams = LinearLayout.LayoutParams(-1, -1, 1f)
                   }
 
-                  // Paper Pattern Bar
                   val paperBar = LinearLayout(this).apply {
                       orientation = LinearLayout.HORIZONTAL
                       setPadding(20, 15, 20, 15)
@@ -388,7 +404,6 @@ jobs:
                   editorLayout.addView(paperBar)
                   editorLayout.addView(noteEditText)
 
-                  // 5. FAB PLUS BUTTON
                   val fabLayout = FrameLayout(this).apply {
                       layoutParams = LinearLayout.LayoutParams(-1, -2)
                   }
@@ -485,11 +500,15 @@ jobs:
           }
           EOF
 
-      - name: 15 - Build Zeeshan Notice APK
+      # ==========================================
+      # STEP 7: Compilation & Output Generation
+      # ==========================================
+      - name: "Robot Step 18: Execute Gradle Assemble Debug APK"
         run: gradle :app:assembleDebug --no-daemon
 
-      - name: 16 - Upload APK Artifact
+      - name: "Robot Step 19: Upload Generated APK Artifact"
         uses: actions/upload-artifact@v4
         with:
           name: Zeeshan-Notice-APK
           path: app/build/outputs/apk/debug/app-debug.apk
+
