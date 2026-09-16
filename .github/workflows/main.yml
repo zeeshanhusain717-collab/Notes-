@@ -1,4 +1,4 @@
-name: Build Notepad Notes Todo APK
+name: Build Zeeshan Notice App APK
 
 on:
   push:
@@ -12,33 +12,36 @@ permissions:
 
 jobs:
   build:
-    name: Build Notepad Notes Todo APK
+    name: Build Zeeshan Notice APK
     runs-on: ubuntu-latest
 
     steps:
-      - name: 01 - Checkout repository
+      - name: 01 - Checkout Repository
         uses: actions/checkout@v4
 
-      - name: 02 - Setup JDK 17
-        uses: actions/setup-java@v5
+      - name: 02 - Setup Java JDK 17
+        uses: actions/setup-java@v4
         with:
-          java-version: "17"
-          distribution: temurin
+          java-version: '17'
+          distribution: 'temurin'
 
       - name: 03 - Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: 04 - Install Android SDK 34
+      - name: 04 - Install Android SDK Platforms
         run: |
           set -euo pipefail
           yes | sdkmanager --licenses >/dev/null || true
           sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 
-      - name: 05 - Create project directories
+      - name: 05 - Create Project Directories
         run: |
           set -euo pipefail
-          mkdir -p app/src/main/java/com/notepad/notes/todo
+          mkdir -p app/src/main/java/com/zeeshan/notice
           mkdir -p app/src/main/res/values
+          mkdir -p app/src/main/res/drawable
+          mkdir -p app/src/main/res/mipmap-anydpi-v26
+          mkdir -p app/src/main/res/layout
 
       - name: 06 - Write gradle.properties
         run: |
@@ -59,11 +62,11 @@ jobs:
               repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
               repositories { google(); mavenCentral() }
           }
-          rootProject.name = "NotepadNotesTodo"
+          rootProject.name = "ZeeshanNotice"
           include(":app")
           EOF
 
-      - name: 08 - Write root build.gradle
+      - name: 08 - Write Root build.gradle
         run: |
           cat > build.gradle <<'EOF'
           plugins {
@@ -72,7 +75,7 @@ jobs:
           }
           EOF
 
-      - name: 09 - Setup Gradle
+      - name: 09 - Setup Gradle Wrapper
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.5"
@@ -84,27 +87,32 @@ jobs:
               id "com.android.application"
               id "org.jetbrains.kotlin.android"
           }
+
           android {
-              namespace "com.notepad.notes.todo"
+              namespace "com.zeeshan.notice"
               compileSdk 34
+
               defaultConfig {
-                  applicationId "com.notepad.notes.todo"
+                  applicationId "com.zeeshan.notice"
                   minSdk 26
                   targetSdk 34
                   versionCode 1
                   versionName "1.0"
               }
+
               buildTypes {
                   release {
                       minifyEnabled false
                   }
               }
+
               compileOptions {
                   sourceCompatibility JavaVersion.VERSION_17
                   targetCompatibility JavaVersion.VERSION_17
               }
               kotlinOptions { jvmTarget = "17" }
           }
+
           dependencies {
               implementation "androidx.core:core-ktx:1.13.1"
               implementation "androidx.appcompat:appcompat:1.7.0"
@@ -113,46 +121,114 @@ jobs:
           }
           EOF
 
-      - name: 11 - Write strings.xml
+      - name: 11 - Write Colors & Strings (VIP Chocolate & White Theme)
         run: |
           cat > app/src/main/res/values/strings.xml <<'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
-              <string name="app_name">Notepad: Notes, Todo</string>
+              <string name="app_name">Z Notice</string>
+              <string name="dashboard_title">Zeeshan Notice</string>
           </resources>
           EOF
 
-      - name: 12 - Write AndroidManifest.xml
+          cat > app/src/main/res/values/colors.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <color name="chocolate_dark">#2B170C</color>
+              <color name="chocolate_main">#3D2314</color>
+              <color name="chocolate_light">#5A3822</color>
+              <color name="white">#FFFFFF</color>
+              <color name="bg_cream">#FDFBF7</color>
+              <color name="text_dark">#1C100A</color>
+              <color name="gold_accent">#D4AF37</color>
+          </resources>
+          EOF
+
+      - name: 12 - Generate Premium 3D Z Vector Logo & App Icons
+        run: |
+          # 3D White/Chocolate Z App Icon Background
+          cat > app/src/main/res/drawable/ic_launcher_bg.xml <<'EOF'
+          <vector xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:aapt="http://schemas.android.com/aapt"
+              android:width="108dp"
+              android:height="108dp"
+              android:viewportWidth="108"
+              android:viewportHeight="108">
+              <path android:pathData="M0,0h108v108h-108z">
+                  <aapt:attr name="android:fillColor">
+                      <gradient
+                          android:startX="0"
+                          android:startY="0"
+                          android:endX="108"
+                          android:endY="108"
+                          android:type="linear">
+                          <item android:offset="0.0" android:color="#5A3822"/>
+                          <item android:offset="1.0" android:color="#2B170C"/>
+                      </gradient>
+                  </aapt:attr>
+              </path>
+          </vector>
+          EOF
+
+          # 3D Bold White Z Foreground Icon
+          cat > app/src/main/res/drawable/ic_launcher_fg.xml <<'EOF'
+          <vector xmlns:android="http://schemas.android.com/apk/res/android"
+              android:width="108dp"
+              android:height="108dp"
+              android:viewportWidth="108"
+              android:viewportHeight="108">
+              <!-- 3D Shadow Layer -->
+              <path
+                  android:fillColor="#1C100A"
+                  android:pathData="M28,28 L80,28 L80,42 L48,68 L80,68 L80,82 L28,82 L28,68 L60,42 L28,42 Z" />
+              <!-- White Bold Z Surface Layer -->
+              <path
+                  android:fillColor="#FFFFFF"
+                  android:pathData="M25,25 L77,25 L77,39 L45,65 L77,65 L77,79 L25,79 L25,65 L57,39 L25,39 Z" />
+          </vector>
+          EOF
+
+          cat > app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+              <background android:drawable="@drawable/ic_launcher_bg" />
+              <foreground android:drawable="@drawable/ic_launcher_fg" />
+          </adaptive-icon>
+          EOF
+
+      - name: 13 - Write AndroidManifest.xml
         run: |
           cat > app/src/main/AndroidManifest.xml <<'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
               <application
                   android:allowBackup="false"
+                  android:icon="@mipmap/ic_launcher"
                   android:label="@string/app_name"
+                  android:roundIcon="@mipmap/ic_launcher"
                   android:supportsRtl="true"
                   android:theme="@style/Theme.AppCompat.DayNight.NoActionBar">
+
                   <activity
                       android:name=".MainActivity"
-                      android:exported="true">
+                      android:exported="true"
+                      android:windowSoftInputMode="adjustResize">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN" />
                           <category android:name="android.intent.category.LAUNCHER" />
                       </intent-filter>
                   </activity>
+
               </application>
           </manifest>
           EOF
 
-      - name: 13 - Write MainActivity.kt (Complete App & 50MB Database Logic)
+      - name: 14 - Write MainActivity.kt (Dashboard & Full Editor System)
         run: |
-          cat > app/src/main/java/com/notepad/notes/todo/MainActivity.kt <<'EOF'
-          package com.notepad.notes.todo
+          cat > app/src/main/java/com/zeeshan/notice/MainActivity.kt <<'EOF'
+          package com.zeeshan.notice
 
-          import android.content.ContentValues
-          import android.content.Context
-          import android.database.sqlite.SQLiteDatabase
-          import android.database.sqlite.SQLiteOpenHelper
           import android.graphics.Color
           import android.graphics.Typeface
           import android.graphics.drawable.GradientDrawable
@@ -160,369 +236,260 @@ jobs:
           import android.view.Gravity
           import android.view.View
           import android.widget.*
-          import androidx.appcompat.app.AlertDialog
           import androidx.appcompat.app.AppCompatActivity
-          import java.text.SimpleDateFormat
-          import java.util.Date
-          import java.util.Locale
-
-          data class NoteItem(
-              val id: Long,
-              val title: String,
-              val content: String,
-              val category: String,
-              val createdAt: String,
-              val sizeBytes: Long
-          )
-
-          class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
-              companion object {
-                  private const val DATABASE_NAME = "notepad_app.db"
-                  private const val DATABASE_VERSION = 1
-                  const val TABLE_NOTES = "notes"
-                  const val COLUMN_ID = "id"
-                  const val COLUMN_TITLE = "title"
-                  const val COLUMN_CONTENT = "content"
-                  const val COLUMN_CATEGORY = "category"
-                  const val COLUMN_CREATED_AT = "created_at"
-                  const val COLUMN_SIZE_BYTES = "size_bytes"
-                  
-                  const val MAX_STORAGE_BYTES = 50 * 1024 * 1024L // 50 MB Storage Limit
-              }
-
-              override fun onCreate(db: SQLiteDatabase) {
-                  val createTableQuery = """
-                      CREATE TABLE $TABLE_NOTES (
-                          $COLUMN_ID INTEGER PRIMARY KEY AUTOINCREMENT,
-                          $COLUMN_TITLE TEXT,
-                          $COLUMN_CONTENT TEXT,
-                          $COLUMN_CATEGORY TEXT,
-                          $COLUMN_CREATED_AT TEXT,
-                          $COLUMN_SIZE_BYTES INTEGER
-                      )
-                  """.trimIndent()
-                  db.execSQL(createTableQuery)
-              }
-
-              override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-                  db.execSQL("DROP TABLE IF EXISTS $TABLE_NOTES")
-                  onCreate(db)
-              }
-
-              fun getTotalUsedBytes(): Long {
-                  val db = this.readableDatabase
-                  val cursor = db.rawQuery("SELECT SUM($COLUMN_SIZE_BYTES) FROM $TABLE_NOTES", null)
-                  var total: Long = 0
-                  if (cursor.moveToFirst()) {
-                      total = cursor.getLong(0)
-                  }
-                  cursor.close()
-                  return total
-              }
-
-              fun insertNote(title: String, content: String, category: String): Boolean {
-                  val titleBytes = title.toByteArray(Charsets.UTF_8).size.toLong()
-                  val contentBytes = content.toByteArray(Charsets.UTF_8).size.toLong()
-                  val noteSizeBytes = titleBytes + contentBytes
-
-                  val currentUsedBytes = getTotalUsedBytes()
-                  if (currentUsedBytes + noteSizeBytes > MAX_STORAGE_BYTES) {
-                      return false // Block Write (50 MB Limit Reached)
-                  }
-
-                  val db = this.writableDatabase
-                  val dateStr = SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault()).format(Date())
-                  
-                  val values = ContentValues().apply {
-                      put(COLUMN_TITLE, title)
-                      put(COLUMN_CONTENT, content)
-                      put(COLUMN_CATEGORY, category)
-                      put(COLUMN_CREATED_AT, dateStr)
-                      put(COLUMN_SIZE_BYTES, noteSizeBytes)
-                  }
-
-                  db.insert(TABLE_NOTES, null, values)
-                  return true
-              }
-
-              fun getAllNotes(): List<NoteItem> {
-                  val notesList = mutableListOf<NoteItem>()
-                  val db = this.readableDatabase
-                  val cursor = db.rawQuery("SELECT * FROM $TABLE_NOTES ORDER BY $COLUMN_ID DESC", null)
-
-                  if (cursor.moveToFirst()) {
-                      do {
-                          val id = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_ID))
-                          val title = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_TITLE))
-                          val content = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_CONTENT))
-                          val category = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_CATEGORY))
-                          val createdAt = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_CREATED_AT))
-                          val sizeBytes = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_SIZE_BYTES))
-
-                          notesList.add(NoteItem(id, title, content, category, createdAt, sizeBytes))
-                      } while (cursor.moveToNext())
-                  }
-                  cursor.close()
-                  return notesList
-              }
-
-              fun deleteNote(id: Long): Boolean {
-                  val db = this.writableDatabase
-                  val result = db.delete(TABLE_NOTES, "$COLUMN_ID=?", arrayOf(id.toString()))
-                  return result > 0
-              }
-          }
 
           class MainActivity : AppCompatActivity() {
 
-              private lateinit var dbHelper: DatabaseHelper
-              private lateinit var progressBar: ProgressBar
-              private lateinit var tvStorageUsage: TextView
-              private lateinit var notesContainer: LinearLayout
+              private lateinit var mainContainer: LinearLayout
+              private lateinit var dashboardHeader: LinearLayout
+              private lateinit var projectHeader: LinearLayout
+              private lateinit var projectTitleTv: TextView
+              private lateinit var editorLayout: LinearLayout
+              private lateinit var noticeListLayout: LinearLayout
+              private lateinit var noteEditText: EditText
 
               override fun onCreate(savedInstanceState: Bundle?) {
                   super.onCreate(savedInstanceState)
 
-                  dbHelper = DatabaseHelper(this)
-
-                  val mainLayout = LinearLayout(this).apply {
+                  mainContainer = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
-                      setBackgroundColor(Color.parseColor("#F8FAFC"))
-                      layoutParams = LinearLayout.LayoutParams(
-                          LinearLayout.LayoutParams.MATCH_PARENT,
-                          LinearLayout.LayoutParams.MATCH_PARENT
-                      )
+                      setBackgroundColor(Color.parseColor("#FDFBF7"))
+                      layoutParams = FrameLayout.LayoutParams(-1, -1)
                   }
 
-                  // Top Header
-                  val headerBar = LinearLayout(this).apply {
+                  // 1. DASHBOARD HEADER (Zeeshan Notice) - Chocolate Background + White Text
+                  dashboardHeader = LinearLayout(this).apply {
                       orientation = LinearLayout.HORIZONTAL
-                      setPadding(40, 40, 40, 20)
                       gravity = Gravity.CENTER_VERTICAL
+                      setPadding(40, 45, 40, 45)
+                      setBackgroundColor(Color.parseColor("#3D2314"))
+                      elevation = 14f
                   }
 
-                  val tvTitle = TextView(this).apply {
-                      text = "Notepad: Notes, Todo"
-                      textSize = 22f
+                  val menuBtn = TextView(this).apply {
+                      text = "≡"
+                      textSize = 28f
+                      setTextColor(Color.WHITE)
                       setTypeface(null, Typeface.BOLD)
-                      setTextColor(Color.parseColor("#0F172A"))
-                      layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                      setPadding(0, 0, 30, 0)
+                      setOnClickListener { showSideDrawer() }
                   }
-                  headerBar.addView(tvTitle)
 
-                  // 50 MB Storage Card
-                  val memoryCard = LinearLayout(this).apply {
+                  val titleTv = TextView(this).apply {
+                      text = "Zeeshan Notice"
+                      textSize = 24f
+                      setTypeface(null, Typeface.BOLD)
+                      setTextColor(Color.WHITE)
+                      layoutParams = LinearLayout.LayoutParams(0, -2, 1f)
+                  }
+
+                  val memoryTv = TextView(this).apply {
+                      text = "💾 12.5/50MB"
+                      textSize = 13f
+                      setTextColor(Color.parseColor("#D4AF37"))
+                      setTypeface(null, Typeface.BOLD)
+                  }
+
+                  dashboardHeader.addView(menuBtn)
+                  dashboardHeader.addView(titleTv)
+                  dashboardHeader.addView(memoryTv)
+
+                  // 2. PROJECT HEADER (Dynamic Color Bar for Editor)
+                  projectHeader = LinearLayout(this).apply {
+                      orientation = LinearLayout.HORIZONTAL
+                      gravity = Gravity.CENTER_VERTICAL
+                      setPadding(30, 35, 30, 35)
+                      setBackgroundColor(Color.parseColor("#3D2314"))
+                      visibility = View.GONE
+                      elevation = 14f
+                  }
+
+                  val backBtn = TextView(this).apply {
+                      text = "←"
+                      textSize = 26f
+                      setTextColor(Color.WHITE)
+                      setTypeface(null, Typeface.BOLD)
+                      setPadding(0, 0, 25, 0)
+                      setOnClickListener { closeEditor() }
+                  }
+
+                  projectTitleTv = TextView(this).apply {
+                      text = "Project Alpha"
+                      textSize = 20f
+                      setTypeface(null, Typeface.BOLD)
+                      setTextColor(Color.WHITE)
+                      layoutParams = LinearLayout.LayoutParams(0, -2, 1f)
+                  }
+
+                  val saveBtn = TextView(this).apply {
+                      text = "✔ SAVE"
+                      textSize = 15f
+                      setTypeface(null, Typeface.BOLD)
+                      setTextColor(Color.parseColor("#D4AF37"))
+                      setOnClickListener {
+                          Toast.makeText(this@MainActivity, "नोट सुरक्षित कर दिया गया!", Toast.LENGTH_SHORT).show()
+                          closeEditor()
+                      }
+                  }
+
+                  projectHeader.addView(backBtn)
+                  projectHeader.addView(projectTitleTv)
+                  projectHeader.addView(saveBtn)
+
+                  // 3. MAIN DASHBOARD CONTENT
+                  noticeListLayout = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
-                      setPadding(35, 30, 35, 30)
+                      setPadding(30, 30, 30, 30)
+                      layoutParams = LinearLayout.LayoutParams(-1, 0, 1f)
+                  }
+
+                  addNoticeCard("🔒 Project Alpha", "आज की मीटिंग के मुख्य बिंदु और प्रोजेक्ट का काम...", "#3D2314")
+                  addNoticeCard("Personal Diary", "घरेलू सामान की लिस्ट और बही-खाता एंट्री...", "#5A3822")
+
+                  // 4. FULL-SCREEN EDITOR CANVAS
+                  editorLayout = LinearLayout(this).apply {
+                      orientation = LinearLayout.VERTICAL
+                      setBackgroundColor(Color.WHITE)
+                      visibility = View.GONE
+                      layoutParams = LinearLayout.LayoutParams(-1, 0, 1f)
+                  }
+
+                  // Paper Pattern Bar
+                  val paperBar = LinearLayout(this).apply {
+                      orientation = LinearLayout.HORIZONTAL
+                      setPadding(20, 15, 20, 15)
+                      setBackgroundColor(Color.parseColor("#F5EFE6"))
+                  }
+                  
+                  val papers = listOf("📄 Plain", "📊 Margin", "📝 Ruled", "📐 Grid 90°")
+                  for (p in papers) {
+                      val btn = Button(this).apply {
+                          text = p
+                          textSize = 11f
+                          setTextColor(Color.parseColor("#3D2314"))
+                          background = GradientDrawable().apply {
+                              setColor(Color.WHITE)
+                              cornerRadius = 15f
+                          }
+                          layoutParams = LinearLayout.LayoutParams(0, -2, 1f).apply { setMargins(5, 0, 5, 0) }
+                      }
+                      paperBar.addView(btn)
+                  }
+
+                  noteEditText = EditText(this).apply {
+                      hint = "यहाँ अपना नोटिस लिखें..."
+                      textSize = 16f
+                      setPadding(40, 40, 40, 40)
+                      gravity = Gravity.TOP
+                      setBackgroundColor(Color.TRANSPARENT)
+                      layoutParams = LinearLayout.LayoutParams(-1, -1)
+                  }
+
+                  editorLayout.addView(paperBar)
+                  editorLayout.addView(noteEditText)
+
+                  // 5. FAB PLUS BUTTON
+                  val fabLayout = FrameLayout(this).apply {
+                      layoutParams = LinearLayout.LayoutParams(-1, -2)
+                  }
+                  val fabBtn = Button(this).apply {
+                      text = "+"
+                      textSize = 30f
+                      setTextColor(Color.WHITE)
+                      background = GradientDrawable().apply {
+                          shape = GradientDrawable.OVAL
+                          setColor(Color.parseColor("#3D2314"))
+                      }
+                      layoutParams = FrameLayout.LayoutParams(130, 130).apply {
+                          gravity = Gravity.END or Gravity.BOTTOM
+                          setMargins(0, 0, 40, 40)
+                      }
+                      setOnClickListener { openEditor("नया प्रोजेक्ट") }
+                  }
+                  fabLayout.addView(fabBtn)
+
+                  mainContainer.addView(dashboardHeader)
+                  mainContainer.addView(projectHeader)
+                  mainContainer.addView(noticeListLayout)
+                  mainContainer.addView(editorLayout)
+                  mainContainer.addView(fabLayout)
+
+                  setContentView(mainContainer)
+              }
+
+              private fun addNoticeCard(title: String, preview: String, headerColorHex: String) {
+                  val card = LinearLayout(this).apply {
+                      orientation = LinearLayout.VERTICAL
+                      elevation = 8f
                       background = GradientDrawable().apply {
                           setColor(Color.WHITE)
                           cornerRadius = 24f
                       }
-                      elevation = 6f
-                      layoutParams = LinearLayout.LayoutParams(
-                          LinearLayout.LayoutParams.MATCH_PARENT,
-                          LinearLayout.LayoutParams.WRAP_CONTENT
-                      ).apply { setMargins(40, 10, 40, 20) }
+                      layoutParams = LinearLayout.LayoutParams(-1, -2).apply {
+                          setMargins(0, 0, 0, 30)
+                      }
+                      setOnClickListener { openEditor(title) }
                   }
 
-                  tvStorageUsage = TextView(this).apply {
-                      textSize = 14f
-                      setTypeface(null, Typeface.BOLD)
-                      setTextColor(Color.parseColor("#334155"))
-                  }
-
-                  progressBar = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
-                      max = 100
-                      layoutParams = LinearLayout.LayoutParams(
-                          LinearLayout.LayoutParams.MATCH_PARENT, 20
-                      ).apply { setMargins(0, 15, 0, 0) }
-                  }
-
-                  memoryCard.addView(tvStorageUsage)
-                  memoryCard.addView(progressBar)
-
-                  // Notes List ScrollView
-                  val scrollView = ScrollView(this).apply {
-                      layoutParams = LinearLayout.LayoutParams(
-                          LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f
-                      )
-                      isFillViewport = true
-                  }
-
-                  notesContainer = LinearLayout(this).apply {
-                      orientation = LinearLayout.VERTICAL
-                      setPadding(40, 10, 40, 40)
-                  }
-                  scrollView.addView(notesContainer)
-
-                  // Add Button
-                  val btnAdd = Button(this).apply {
-                      text = "+ Add New Note"
+                  val cardHeader = TextView(this).apply {
+                      text = title
                       textSize = 16f
+                      setTypeface(null, Typeface.BOLD)
                       setTextColor(Color.WHITE)
-                      setTypeface(null, Typeface.BOLD)
+                      setPadding(30, 20, 30, 20)
                       background = GradientDrawable().apply {
-                          setColor(Color.parseColor("#0F172A"))
-                          cornerRadius = 30f
-                      }
-                      layoutParams = LinearLayout.LayoutParams(
-                          LinearLayout.LayoutParams.MATCH_PARENT,
-                          LinearLayout.LayoutParams.WRAP_CONTENT
-                      ).apply { setMargins(40, 10, 40, 30) }
-
-                      setOnClickListener { showAddNoteDialog() }
-                  }
-
-                  mainLayout.addView(headerBar)
-                  mainLayout.addView(memoryCard)
-                  mainLayout.addView(scrollView)
-                  mainLayout.addView(btnAdd)
-
-                  setContentView(mainLayout)
-                  refreshNotesAndStorage()
-              }
-
-              private fun refreshNotesAndStorage() {
-                  val totalBytes = dbHelper.getTotalUsedBytes()
-                  val totalMB = totalBytes.toDouble() / (1024 * 1024)
-                  val percent = ((totalBytes.toDouble() / DatabaseHelper.MAX_STORAGE_BYTES) * 100).toInt()
-
-                  val formattedMB = String.format("%.2f", totalMB)
-                  tvStorageUsage.text = "Memory: $formattedMB MB / 50.00 MB ($percent%)"
-                  progressBar.progress = percent
-
-                  notesContainer.removeAllViews()
-                  val notes = dbHelper.getAllNotes()
-
-                  if (notes.isEmpty()) {
-                      val emptyTv = TextView(this).apply {
-                          text = "कोई नोट उपलब्ध नहीं है। नया जोड़ने के लिए बटन दबाएं।"
-                          textSize = 14f
-                          setTextColor(Color.GRAY)
-                          gravity = Gravity.CENTER
-                          setPadding(0, 50, 0, 0)
-                      }
-                      notesContainer.addView(emptyTv)
-                  } else {
-                      for (note in notes) {
-                          notesContainer.addView(createNoteCard(note))
-                      }
-                  }
-              }
-
-              private fun createNoteCard(note: NoteItem): View {
-                  val card = LinearLayout(this).apply {
-                      orientation = LinearLayout.VERTICAL
-                      setPadding(35, 30, 35, 30)
-                      background = GradientDrawable().apply {
-                          setColor(Color.WHITE)
-                          cornerRadius = 20f
-                      }
-                      elevation = 4f
-                      layoutParams = LinearLayout.LayoutParams(
-                          LinearLayout.LayoutParams.MATCH_PARENT,
-                          LinearLayout.LayoutParams.WRAP_CONTENT
-                      ).apply { setMargins(0, 0, 0, 20) }
-                  }
-
-                  val header = LinearLayout(this).apply {
-                      orientation = LinearLayout.HORIZONTAL
-                  }
-
-                  val tvTitle = TextView(this).apply {
-                      text = note.title
-                      textSize = 16f
-                      setTypeface(null, Typeface.BOLD)
-                      setTextColor(Color.parseColor("#1E293B"))
-                      layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-                  }
-
-                  val btnDelete = TextView(this).apply {
-                      text = "🗑️"
-                      textSize = 16f
-                      setPadding(10, 0, 10, 0)
-                      setOnClickListener {
-                          dbHelper.deleteNote(note.id)
-                          Toast.makeText(this@MainActivity, "नोट डिलीट कर दिया गया", Toast.LENGTH_SHORT).show()
-                          refreshNotesAndStorage()
+                          setColor(Color.parseColor(headerColorHex))
+                          cornerRadii = floatArrayOf(24f, 24f, 24f, 24f, 0f, 0f, 0f, 0f)
                       }
                   }
 
-                  header.addView(tvTitle)
-                  header.addView(btnDelete)
-
-                  val tvContent = TextView(this).apply {
-                      text = note.content
+                  val cardBody = TextView(this).apply {
+                      text = preview
                       textSize = 14f
-                      setTextColor(Color.parseColor("#475569"))
-                      setPadding(0, 10, 0, 15)
+                      setTextColor(Color.parseColor("#333333"))
+                      setPadding(30, 25, 30, 25)
                   }
 
-                  val sizeKB = String.format("%.2f", note.sizeBytes.toDouble() / 1024)
-                  val tvFooter = TextView(this).apply {
-                      text = "${note.createdAt}  •  $sizeKB KB"
-                      textSize = 11f
-                      setTextColor(Color.GRAY)
-                  }
-
-                  card.addView(header)
-                  card.addView(tvContent)
-                  card.addView(tvFooter)
-
-                  return card
+                  card.addView(cardHeader)
+                  card.addView(cardBody)
+                  noticeListLayout.addView(card)
               }
 
-              private fun showAddNoteDialog() {
-                  val builder = AlertDialog.Builder(this)
-                  builder.setTitle("नया नोटिस / नोट लिखें")
-
-                  val layout = LinearLayout(this).apply {
-                      orientation = LinearLayout.VERTICAL
-                      setPadding(40, 20, 40, 20)
-                  }
-
-                  val etTitle = EditText(this).apply { hint = "शीर्षक (Title)" }
-                  val etContent = EditText(this).apply { hint = "विवरण लिखें..."; minLines = 4 }
-
-                  layout.addView(etTitle)
-                  layout.addView(etContent)
-                  builder.setView(layout)
-
-                  builder.setPositiveButton("सेव करें") { dialog, _ ->
-                      val title = etTitle.text.toString().trim()
-                      val content = etContent.text.toString().trim()
-
-                      if (title.isNotEmpty() || content.isNotEmpty()) {
-                          val success = dbHelper.insertNote(title, content, "General")
-                          if (!success) {
-                              showMemoryFullAlert()
-                          } else {
-                              refreshNotesAndStorage()
-                          }
-                      }
-                      dialog.dismiss()
-                  }
-
-                  builder.setNegativeButton("रद्द करें") { dialog, _ -> dialog.dismiss() }
-                  builder.show()
+              private fun openEditor(title: String) {
+                  dashboardHeader.visibility = View.GONE
+                  noticeListLayout.visibility = View.GONE
+                  projectHeader.visibility = View.VISIBLE
+                  editorLayout.visibility = View.VISIBLE
+                  projectTitleTv.text = title
               }
 
-              private fun showMemoryFullAlert() {
-                  AlertDialog.Builder(this)
-                      .setTitle("⚠️ Memory Full (50 MB Limit)")
-                      .setMessage("50 MB की स्टोरेज सीमा पूरी हो चुकी है! नया नोट जोड़ने के लिए पुराना नोट डिलीट करें।")
-                      .setPositiveButton("ठीक है", null)
-                      .show()
+              private fun closeEditor() {
+                  projectHeader.visibility = View.GONE
+                  editorLayout.visibility = View.GONE
+                  dashboardHeader.visibility = View.VISIBLE
+                  noticeListLayout.visibility = View.VISIBLE
+              }
+
+              private fun showSideDrawer() {
+                  val popup = PopupMenu(this, dashboardHeader)
+                  popup.menu.add("📊 1. Memory Details (50 MB Limit)")
+                  popup.menu.add("🔐 2. App Lock Manager")
+                  popup.menu.add("📁 3. Folder Lock Setup")
+
+                  popup.setOnMenuItemClickListener { item ->
+                      Toast.makeText(this, item.title, Toast.LENGTH_SHORT).show()
+                      true
+                  }
+                  popup.show()
               }
           }
           EOF
 
-      - name: 14 - Build APK
+      - name: 15 - Build Zeeshan Notice APK
         run: gradle :app:assembleDebug --no-daemon
 
-      - name: 15 - Upload Notepad App APK Artifact
+      - name: 16 - Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Notepad-Notes-Todo-APK
+          name: Zeeshan-Notice-APK
           path: app/build/outputs/apk/debug/app-debug.apk
-
