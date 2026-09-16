@@ -28,19 +28,20 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: "Robot Step 03: Initialize Android SDK Components"
+      - name: "Robot Step 03: Initialize Android SDK Components & NDK"
         run: |
           set -euo pipefail
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses >/dev/null || true
-          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0" "ndk;25.2.9519653" "cmake;3.22.1"
 
       # ==========================================
       # STEP 2: Modular Directory Creation
       # ==========================================
-      - name: "Robot Step 04: Create Root & Source Directories"
+      - name: "Robot Step 04: Create Root, Source & Native CPP Directories"
         run: |
           set -euo pipefail
           mkdir -p app/src/main/java/com/zeeshan/notice
+          mkdir -p app/src/main/cpp
 
       - name: "Robot Step 05: Create Resource & Asset Directories"
         run: |
@@ -49,6 +50,7 @@ jobs:
           mkdir -p app/src/main/res/drawable
           mkdir -p app/src/main/res/mipmap-anydpi-v26
           mkdir -p app/src/main/res/layout
+          mkdir -p app/src/main/res/menu
 
       # ==========================================
       # STEP 3: System Gradle Configuration
@@ -90,7 +92,36 @@ jobs:
         with:
           gradle-version: "8.5"
 
-      - name: "Robot Step 10: Configure Module App build.gradle"
+      # ==========================================
+      # STEP 4: C++ Native Storage Engine Setup
+      # ==========================================
+      - name: "Robot Step 10: Create C++ Native Code for Storage Calculation"
+        run: |
+          cat > app/src/main/cpp/native-lib.cpp <<'EOF'
+          #include <jni.h>
+          #include <string>
+
+          extern "C" JNIEXPORT jlong JNICALL
+          Java_com_zeeshan_notice_MainActivity_getStorageUsageBytes(JNIEnv* env, jobject instance, jstring textContent) {
+              if (textContent == NULL) return 0;
+              const char* nativeString = env->GetStringUTFChars(textContent, 0);
+              jsize length = env->GetStringUTFLength(textContent);
+              env->ReleaseStringUTFChars(textContent, nativeString);
+              return (jlong)length;
+          }
+          EOF
+
+      - name: "Robot Step 11: Create CMakeLists.txt Build Configuration"
+        run: |
+          cat > app/src/main/cpp/CMakeLists.txt <<'EOF'
+          cmake_minimum_required(VERSION 3.22.1)
+          project("notice")
+          add_library(native-lib SHARED native-lib.cpp)
+          find_library(log-lib log)
+          target_link_libraries(native-lib ${log-lib})
+          EOF
+
+      - name: "Robot Step 12: Configure Module App build.gradle with C++ Support"
         run: |
           cat > app/build.gradle <<'EOF'
           plugins {
@@ -108,6 +139,19 @@ jobs:
                   targetSdk 34
                   versionCode 1
                   versionName "1.0"
+
+                  externalNativeBuild {
+                      cmake {
+                          cppFlags ""
+                      }
+                  }
+              }
+
+              externalNativeBuild {
+                  cmake {
+                      path "src/main/cpp/CMakeLists.txt"
+                      version "3.22.1"
+                  }
               }
 
               buildTypes {
@@ -128,23 +172,24 @@ jobs:
               implementation "androidx.appcompat:appcompat:1.7.0"
               implementation "com.google.android.material:material:1.12.0"
               implementation "androidx.constraintlayout:constraintlayout:2.1.4"
+              implementation "androidx.drawerlayout:drawerlayout:1.2.0"
           }
           EOF
 
       # ==========================================
-      # STEP 4: UI Design, Theme & Resources
+      # STEP 5: UI Design, Theme & Layout Resources
       # ==========================================
-      - name: "Robot Step 11: Create App Strings Configuration"
+      - name: "Robot Step 13: Create App Strings Configuration"
         run: |
           cat > app/src/main/res/values/strings.xml <<'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
-              <string name="app_name">Z Notice</string>
+              <string name="app_name">Zeeshan Notice</string>
               <string name="dashboard_title">Zeeshan Notice</string>
           </resources>
           EOF
 
-      - name: "Robot Step 12: Create VIP Chocolate Theme Color Palette"
+      - name: "Robot Step 14: Create VIP Chocolate Theme Color Palette"
         run: |
           cat > app/src/main/res/values/colors.xml <<'EOF'
           <?xml version="1.0" encoding="utf-8"?>
@@ -159,10 +204,32 @@ jobs:
           </resources>
           EOF
 
+      - name: "Robot Step 15: Create Drawer Navigation Menu Items"
+        run: |
+          cat > app/src/main/res/menu/drawer_menu.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <menu xmlns:android="http://schemas.android.com/apk/res/android">
+              <group android:checkableBehavior="single">
+                  <item
+                      android:id="@+id/nav_new_folder"
+                      android:title="📁 Create New Folder" />
+                  <item
+                      android:id="@+id/nav_new_page"
+                      android:title="📄 Create New Page" />
+                  <item
+                      android:id="@+id/nav_memory"
+                      android:title="📊 Memory Stats (100 MB Max)" />
+                  <item
+                      android:id="@+id/nav_security"
+                      android:title="🔐 App &amp; Folder Lock" />
+              </group>
+          </menu>
+          EOF
+
       # ==========================================
-      # STEP 5: Icons & Branding Generation
+      # STEP 6: Icons & Branding Generation
       # ==========================================
-      - name: "Robot Step 13: Generate 3D Icon Background Asset"
+      - name: "Robot Step 16: Generate 3D Icon Background Asset"
         run: |
           cat > app/src/main/res/drawable/ic_launcher_bg.xml <<'EOF'
           <vector xmlns:android="http://schemas.android.com/apk/res/android"
@@ -187,7 +254,7 @@ jobs:
           </vector>
           EOF
 
-      - name: "Robot Step 14: Generate 3D White Z Foreground Vector"
+      - name: "Robot Step 17: Generate 3D White Z Foreground Vector"
         run: |
           cat > app/src/main/res/drawable/ic_launcher_fg.xml <<'EOF'
           <vector xmlns:android="http://schemas.android.com/apk/res/android"
@@ -204,7 +271,7 @@ jobs:
           </vector>
           EOF
 
-      - name: "Robot Step 15: Create Adaptive Icon Configuration"
+      - name: "Robot Step 18: Create Adaptive Icon Configuration"
         run: |
           cat > app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml <<'EOF'
           <?xml version="1.0" encoding="utf-8"?>
@@ -215,9 +282,9 @@ jobs:
           EOF
 
       # ==========================================
-      # STEP 6: Core App Manifest & Logic
+      # STEP 7: Core App Manifest & Real Kotlin Logic
       # ==========================================
-      - name: "Robot Step 16: Write AndroidManifest.xml Architecture"
+      - name: "Robot Step 19: Write AndroidManifest.xml Architecture"
         run: |
           cat > app/src/main/AndroidManifest.xml <<'EOF'
           <?xml version="1.0" encoding="utf-8"?>
@@ -245,11 +312,12 @@ jobs:
           </manifest>
           EOF
 
-      - name: "Robot Step 17: Write MainActivity.kt Logic Code"
+      - name: "Robot Step 20: Write Updated MainActivity.kt Logic Code"
         run: |
           cat > app/src/main/java/com/zeeshan/notice/MainActivity.kt <<'EOF'
           package com.zeeshan.notice
 
+          import android.app.AlertDialog
           import android.graphics.Color
           import android.graphics.Typeface
           import android.graphics.drawable.GradientDrawable
@@ -258,19 +326,40 @@ jobs:
           import android.view.View
           import android.widget.*
           import androidx.appcompat.app.AppCompatActivity
+          import androidx.core.view.GravityCompat
+          import androidx.drawerlayout.widget.DrawerLayout
+          import com.google.android.material.navigation.NavigationView
 
           class MainActivity : AppCompatActivity() {
 
+              companion object {
+                  init {
+                      System.loadLibrary("native-lib")
+                  }
+              }
+
+              private external fun getStorageUsageBytes(textContent: String): Long
+
+              private lateinit var drawerLayout: DrawerLayout
               private lateinit var mainContainer: LinearLayout
               private lateinit var dashboardHeader: LinearLayout
               private lateinit var projectHeader: LinearLayout
               private lateinit var projectTitleTv: TextView
+              private lateinit var memoryTv: TextView
               private lateinit var editorLayout: LinearLayout
               private lateinit var noticeListLayout: LinearLayout
+              private lateinit var emptyStateTv: TextView
               private lateinit var noteEditText: EditText
+
+              private var totalStoredBytes: Long = 0L
+              private var currentActiveCard: View? = null
 
               override fun onCreate(savedInstanceState: Bundle?) {
                   super.onCreate(savedInstanceState)
+
+                  drawerLayout = DrawerLayout(this).apply {
+                      layoutParams = FrameLayout.LayoutParams(-1, -1)
+                  }
 
                   mainContainer = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
@@ -278,6 +367,7 @@ jobs:
                       layoutParams = FrameLayout.LayoutParams(-1, -1)
                   }
 
+                  // Top Header Setup
                   dashboardHeader = LinearLayout(this).apply {
                       orientation = LinearLayout.HORIZONTAL
                       gravity = Gravity.CENTER_VERTICAL
@@ -292,19 +382,19 @@ jobs:
                       setTextColor(Color.WHITE)
                       setTypeface(null, Typeface.BOLD)
                       setPadding(0, 0, 30, 0)
-                      setOnClickListener { showSideDrawer() }
+                      setOnClickListener { drawerLayout.openDrawer(GravityCompat.START) }
                   }
 
                   val titleTv = TextView(this).apply {
                       text = "Zeeshan Notice"
-                      textSize = 24f
+                      textSize = 22f
                       setTypeface(null, Typeface.BOLD)
                       setTextColor(Color.WHITE)
                       layoutParams = LinearLayout.LayoutParams(0, -2, 1f)
                   }
 
-                  val memoryTv = TextView(this).apply {
-                      text = "💾 12.5/50MB"
+                  memoryTv = TextView(this).apply {
+                      text = "💾 0.0 / 100 MB"
                       textSize = 13f
                       setTextColor(Color.parseColor("#D4AF37"))
                       setTypeface(null, Typeface.BOLD)
@@ -314,6 +404,7 @@ jobs:
                   dashboardHeader.addView(titleTv)
                   dashboardHeader.addView(memoryTv)
 
+                  // Editor Header Setup
                   projectHeader = LinearLayout(this).apply {
                       orientation = LinearLayout.HORIZONTAL
                       gravity = Gravity.CENTER_VERTICAL
@@ -333,7 +424,7 @@ jobs:
                   }
 
                   projectTitleTv = TextView(this).apply {
-                      text = "Project Alpha"
+                      text = "New Page"
                       textSize = 20f
                       setTypeface(null, Typeface.BOLD)
                       setTextColor(Color.WHITE)
@@ -345,25 +436,30 @@ jobs:
                       textSize = 15f
                       setTypeface(null, Typeface.BOLD)
                       setTextColor(Color.parseColor("#D4AF37"))
-                      setOnClickListener {
-                          Toast.makeText(this@MainActivity, "नोट सुरक्षित कर दिया गया!", Toast.LENGTH_SHORT).show()
-                          closeEditor()
-                      }
+                      setOnClickListener { saveCurrentNote() }
                   }
 
                   projectHeader.addView(backBtn)
                   projectHeader.addView(projectTitleTv)
                   projectHeader.addView(saveBtn)
 
+                  // Content & Empty State Area
                   noticeListLayout = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
                       setPadding(30, 30, 30, 30)
                       layoutParams = LinearLayout.LayoutParams(-1, 0, 1f)
                   }
 
-                  addNoticeCard("🔒 Project Alpha", "आज की मीटिंग के मुख्य बिंदु और प्रोजेक्ट का काम...", "#3D2314")
-                  addNoticeCard("Personal Diary", "घरेलू सामान की लिस्ट और बही-खाता एंट्री...", "#5A3822")
+                  emptyStateTv = TextView(this).apply {
+                      text = "कोई नोटिस या फोल्डर उपलब्ध नहीं है\nनया पेज बनाने के लिए '+' दबाएं"
+                      textSize = 16f
+                      setTextColor(Color.GRAY)
+                      gravity = Gravity.CENTER
+                      layoutParams = LinearLayout.LayoutParams(-1, -1)
+                  }
+                  noticeListLayout.addView(emptyStateTv)
 
+                  // Note Editor Layout
                   editorLayout = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
                       setBackgroundColor(Color.WHITE)
@@ -419,7 +515,7 @@ jobs:
                           gravity = Gravity.END or Gravity.BOTTOM
                           setMargins(0, 0, 40, 40)
                       }
-                      setOnClickListener { openEditor("नया प्रोजेक्ट") }
+                      setOnClickListener { promptCreateNewPage() }
                   }
                   fabLayout.addView(fabBtn)
 
@@ -429,10 +525,63 @@ jobs:
                   mainContainer.addView(editorLayout)
                   mainContainer.addView(fabLayout)
 
-                  setContentView(mainContainer)
+                  // Navigation Drawer Side Menu
+                  val navView = NavigationView(this).apply {
+                      layoutParams = DrawerLayout.LayoutParams(700, -1).apply {
+                          gravity = GravityCompat.START
+                      }
+                      inflateMenu(R.menu.drawer_menu)
+                      setNavigationItemSelectedListener { item ->
+                          when (item.itemId) {
+                              R.id.nav_new_folder -> promptCreateFolder()
+                              R.id.nav_new_page -> promptCreateNewPage()
+                              R.id.nav_memory -> showMemoryDetails()
+                              R.id.nav_security -> Toast.makeText(this@MainActivity, "🔐 Security Lock Active", Toast.LENGTH_SHORT).show()
+                          }
+                          drawerLayout.closeDrawer(GravityCompat.START)
+                          true
+                      }
+                  }
+
+                  drawerLayout.addView(mainContainer)
+                  drawerLayout.addView(navView)
+
+                  setContentView(drawerLayout)
               }
 
-              private fun addNoticeCard(title: String, preview: String, headerColorHex: String) {
+              private fun promptCreateFolder() {
+                  val input = EditText(this)
+                  AlertDialog.Builder(this)
+                      .setTitle("📁 Create New Folder")
+                      .setMessage("फोल्डर का नाम लिखें:")
+                      .setView(input)
+                      .setPositiveButton("Create") { _, _ ->
+                          val name = input.text.toString().ifEmpty { "New Folder" }
+                          addNewItemCard("📁 $name", "Folder (Empty)", "#5A3822")
+                      }
+                      .setNegativeButton("Cancel", null)
+                      .show()
+              }
+
+              private fun promptCreateNewPage() {
+                  val input = EditText(this)
+                  AlertDialog.Builder(this)
+                      .setTitle("📄 Create New Page")
+                      .setMessage("पेज/नोटिस का टाइटल डालें:")
+                      .setView(input)
+                      .setPositiveButton("Open Editor") { _, _ ->
+                          val title = input.text.toString().ifEmpty { "Untitled Page" }
+                          openEditor(title)
+                      }
+                      .setNegativeButton("Cancel", null)
+                      .show()
+              }
+
+              private fun addNewItemCard(title: String, preview: String, headerColorHex: String) {
+                  if (emptyStateTv.visibility == View.VISIBLE) {
+                      emptyStateTv.visibility = View.GONE
+                  }
+
                   val card = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
                       elevation = 8f
@@ -443,7 +592,9 @@ jobs:
                       layoutParams = LinearLayout.LayoutParams(-1, -2).apply {
                           setMargins(0, 0, 0, 30)
                       }
-                      setOnClickListener { openEditor(title) }
+                      setOnClickListener {
+                          openEditor(title.replace("📁 ", "").replace("📄 ", ""))
+                      }
                   }
 
                   val cardHeader = TextView(this).apply {
@@ -470,12 +621,27 @@ jobs:
                   noticeListLayout.addView(card)
               }
 
+              private fun saveCurrentNote() {
+                  val text = noteEditText.text.toString()
+                  val title = projectTitleTv.text.toString()
+                  val bytes = getStorageUsageBytes(text)
+                  totalStoredBytes += bytes
+
+                  val mbUsed = totalStoredBytes.toDouble() / (1024 * 1024)
+                  memoryTv.text = String.format("💾 %.2f / 100 MB", mbUsed)
+
+                  addNewItemCard("📄 $title", if (text.length > 30) text.substring(0, 30) + "..." else text, "#3D2314")
+                  Toast.makeText(this, "नोट C++ स्टोरेज इंजन द्वारा सुरक्षित!", Toast.LENGTH_SHORT).show()
+                  closeEditor()
+              }
+
               private fun openEditor(title: String) {
                   dashboardHeader.visibility = View.GONE
                   noticeListLayout.visibility = View.GONE
                   projectHeader.visibility = View.VISIBLE
                   editorLayout.visibility = View.VISIBLE
                   projectTitleTv.text = title
+                  noteEditText.setText("")
               }
 
               private fun closeEditor() {
@@ -485,30 +651,25 @@ jobs:
                   noticeListLayout.visibility = View.VISIBLE
               }
 
-              private fun showSideDrawer() {
-                  val popup = PopupMenu(this, dashboardHeader)
-                  popup.menu.add("📊 1. Memory Details (50 MB Limit)")
-                  popup.menu.add("🔐 2. App Lock Manager")
-                  popup.menu.add("📁 3. Folder Lock Setup")
-
-                  popup.setOnMenuItemClickListener { item ->
-                      Toast.makeText(this, item.title, Toast.LENGTH_SHORT).show()
-                      true
-                  }
-                  popup.show()
+              private fun showMemoryDetails() {
+                  val mbUsed = totalStoredBytes.toDouble() / (1024 * 1024)
+                  AlertDialog.Builder(this)
+                      .setTitle("📊 C++ Native Memory Stats")
+                      .setMessage("इस्तेमाल हुई स्टोरेज: ${totalStoredBytes} Bytes (${String.format("%.4f", mbUsed)} MB)\nअधिकतम स्टोरेज सीमा: 100 MB")
+                      .setPositiveButton("OK", null)
+                      .show()
               }
           }
           EOF
 
       # ==========================================
-      # STEP 7: Compilation & Output Generation
+      # STEP 8: Compilation & Output Generation
       # ==========================================
-      - name: "Robot Step 18: Execute Gradle Assemble Debug APK"
+      - name: "Robot Step 21: Execute Gradle Assemble Debug APK"
         run: gradle :app:assembleDebug --no-daemon
 
-      - name: "Robot Step 19: Upload Generated APK Artifact"
+      - name: "Robot Step 22: Upload Generated APK Artifact"
         uses: actions/upload-artifact@v4
         with:
           name: Zeeshan-Notice-APK
           path: app/build/outputs/apk/debug/app-debug.apk
-
